@@ -23,34 +23,34 @@ class SCEL_cellDict(object):
         self.ciZu_offset = 0x2628
         self.format = 'H'
 
-    def byte2str(self, data, return_raw=False, use_chr=True):
-        # Convert [data] into str
-        if not use_chr:
-            return_raw = True
+    def _forward(self, step=2):
+        # Read self.rawdata,
+        # Read the next [step] bytes and return the unpacked bytes
 
-        # The length of [data] should be even
-        length = len(data)
-        assert(length % 2 == 0)
+        # The [step] value should be even
+        assert(step % 2 == 0)
 
-        # Group data in each two-data pair
-        grouped_each_2bytes = [data[i*2:i*2+2] for i in range(length >> 1)]
+        # Read one pair of bytes
+        if step == 2:
+            self.pos += step
+            return struct.unpack(self.format, self.rawdata[self.pos-2:self.pos])[0]
 
-        # Decode data using [format]
-        if use_chr:
-            string = ''.join([chr(struct.unpack(self.format, e)[0])
-                              for e in grouped_each_2bytes])
-        else:
-            string = [struct.unpack(self.format, e)[0]
-                      for e in grouped_each_2bytes]
+        # Read several pair of bytes
+        grouped_each_pairBytes = [self.rawdata[self.pos+i*2:self.pos+i*2+2]
+                                  for i in range(step >> 1)]
+        self.pos += step
+        return [struct.unpack(self.format, e)[0] for e in grouped_each_pairBytes]
 
-        # Return the string if return_raw is True,
-        # otherwise, improve useability of the string
-        if return_raw:
-            return string
-        else:
-            return string.replace('\x00', '')
+    def _str(self, lst):
+        # Convert lst into string
+        if not isinstance(lst, type([])):
+            lst = [lst]
+        string = ''.join([chr(e) for e in lst])
+        string = string.replace('\x00', '')
+        return string
 
     def pipeline(self):
+        # Pipeline of reading the bytes
         self.read_info()
         self.read_pinYin_table()
         self.read_ciZu()
@@ -75,82 +75,94 @@ class SCEL_cellDict(object):
 
     def read_info(self):
         # Read info of the .scel file
-        self.Name = self.byte2str(self.rawdata[0x130:0x330])
-        self.Type = self.byte2str(self.rawdata[0x338:0x540])
-        self.Description = self.byte2str(self.rawdata[0x540:0xd40])
-        self.Example = self.byte2str(self.rawdata[0xd40:self.pinYin_offset])
+        # Starts with 0x130
+        self.pos = 0x130
+
+        # Read infos in order
+        self.Name = self._str(self._forward(0x330-self.pos))
+        self.Type = self._str(self._forward(0x540-self.pos))
+        self.Description = self._str(self._forward(0xd40-self.pos))
+        self.Example = self._str(self._forward(self.pinYin_offset-self.pos))
 
     def read_pinYin_table(self):
         # Read pinYin table of the .scel file
-        # Will generate pinYin table
+        # Starts with self.pinYin_offset
+        self.pos = self.pinYin_offset
+
+        # Will generate pinYin table and count,
+        # table: table of pinYins,
+        # count: count of pinYins
         self.pinYin_table = dict()
+        self.pinYin_count = dict()
 
         # First 4 bytes is fixed for check
-        pos = self.pinYin_offset + 4
+        self._forward(4)
 
         # Read until reach self.ciZu_offset
         # Structure is (idx x 2, length x 2, pinYin x length)
-        while pos < self.ciZu_offset:
+        while self.pos < self.ciZu_offset:
             # idx
-            idx = struct.unpack(self.format, self.rawdata[pos:pos+2])[0]
-            pos += 2
+            idx = self._forward()
             # length of pinYin bytes
-            length = struct.unpack(self.format, self.rawdata[pos:pos+2])[0]
-            pos += 2
+            length = self._forward()
             # pinYin
-            pinYin = self.byte2str(self.rawdata[pos:pos+length])
-            pos += length
+            pinYin = self._str(self._forward(length))
+            # pinYin = self.byte2str(self.rawdata[self.pos:self.pos+length])
+            # self.pos += length
             # Record
             self.pinYin_table[idx] = pinYin
+            self.pinYin_count[pinYin] = 0
 
         return self.pinYin_table
 
-    def get_pinYin(self, idx):
-        # Check out the [idx] of the pinYin table
-        return self.pinYin_table.get(idx, '--')
+    def get_pinYin(self, idx, count=False):
+        # Check out the [idx] of the pinYin table,
+        # Count getting times if [count] is True
+        if idx not in self.pinYin_table:
+            return '--'
+
+        pinYin = self.pinYin_table[idx]
+        if count:
+            self.pinYin_count[pinYin] += 1
+
+        return pinYin
 
     def read_ciZu(self):
         # Read ciZu in the .scel file
-        self.main_table = []
-        pos = self.ciZu_offset
-        while pos < len(self.rawdata):
-            # count of ciZu using the pinYin
-            num = struct.unpack(self.format,
-                                self.rawdata[pos:pos+2])[0]
-            num = int(num)
-            pos += 2
+        # Starts with self.ciZu_offset
+        self.pos = self.ciZu_offset
+
+        # Will generate words list,
+        # each word is three elements tuple: (count, pinYin, ciZu)
+        self.words = []
+
+        # Read until reach the end of the file
+        # Structure is
+        while self.pos < len(self.rawdata):
+            # count of ciZu with the same pinYin
+            num = self._forward()
             # length of pinYin bytes
-            length = struct.unpack(self.format,
-                                   self.rawdata[pos:pos+2])[0]
-            pos += 2
+            length = self._forward()
             # pinYin
-            pinYin_idxs = self.byte2str(
-                self.rawdata[pos:pos+length], use_chr=False)
-            pinYin = ''.join([self.get_pinYin(idx) for idx in pinYin_idxs])
-            pos += length
+            pinYin_idxs = self._forward(length)
+            pinYin = ''.join([self.get_pinYin(idx, count=True)
+                              for idx in pinYin_idxs])
 
             # Read the ciZu words
             for _ in range(num):
                 # length of the word bytes
-                length = struct.unpack(self.format,
-                                       self.rawdata[pos:pos+2])[0]
-                pos += 2
+                length = self._forward()
                 # word
-                word = self.byte2str(self.rawdata[pos:pos+length])
-                pos += length
-                # length of extend
-                length = struct.unpack(self.format,
-                                       self.rawdata[pos:pos+2])[0]
-                pos += 2
+                word = self._str(self._forward(length))
+                # length of extend bytes
+                length = self._forward()
                 # word count is in the first 2 bytes of extend
-                count = struct.unpack(self.format,
-                                      self.rawdata[pos:pos+2])[0]
-                count = int(count)
-                pos += length
+                extend = self._forward(length)
+                count = extend[0]
                 # Record
-                self.main_table.append((count, pinYin, word))
+                self.words.append((count, pinYin, word))
 
-        return self.main_table
+        return self.words
 
 
 # %%
@@ -173,6 +185,9 @@ celldict.pipeline()
 celldict.pinYin_table
 
 # %%
-celldict.main_table
+celldict.words
+
+# %%
+celldict.pinYin_count
 
 # %%
