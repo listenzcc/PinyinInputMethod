@@ -19,7 +19,9 @@ class SCEL_cellDict(object):
 
         self.filepath = filepath
 
-        # !!! pinYin_count is essential
+        # !!! pinYin_count is essential,
+        # users can use existing pinYin_count to warn startup,
+        # default is using empty pinYin_count as cold startup.
         self.pinYin_count = pinYin_count
 
     def solid_pinYin_count(self, frame_path=None):
