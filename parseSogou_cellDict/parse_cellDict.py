@@ -137,7 +137,9 @@ class SCEL_cellDict(object):
         self.words = []
 
         # Read until reach the end of the file
-        # Structure is
+        # Structure is (num x 2, length x 2, pinYin_idxs x length, wordarea x num),
+        # structure of wordarea is (length x 2, word x length, length x 2, extend x length) repeat num times,
+        # structure of extend is (count x 2, ???)
         while self.pos < len(self.rawdata):
             # count of ciZu with the same pinYin
             num = self._forward()
