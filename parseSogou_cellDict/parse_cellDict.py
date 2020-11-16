@@ -3,17 +3,52 @@
 
 # %%
 import os
+import pandas as pd
 import struct
+import time
 
 
 class SCEL_cellDict(object):
-    def __init__(self, filepath):
+    def __init__(self, filepath, pinYin_count=dict()):
         self.init_settings()
 
         with open(filepath, 'rb') as f:
             self.rawdata = f.read()
 
-        assert(self.legal_check())
+        assert (self.legal_check())
+
+        self.filepath = filepath
+
+        # !!! pinYin_count is essential
+        self.pinYin_count = pinYin_count
+
+    def solid_pinYin_count(self, frame_path=None):
+        # Convert pinYin_count into re-useable pandas dataframe,
+        # and save it into the file of frame_path using .json format.
+        # A timer is used to see if the operation takes too long
+        t = time.time()
+
+        # Convert the pinYin_count dict into dataframe
+        pinYin_frame = pd.DataFrame(celldict.pinYin_count).transpose()
+
+        # Sort the columns of the dataframe
+        pinYin_frame.columns = ['Count', 'Candidates']
+        print('Passed {} seconds'.format(time.time() - t))
+
+        # Save the dataframe to the file on [frame_path],
+        # if the frame_path is not specified,
+        # save besides of the .scel file with prefix of '_'
+        if frame_path is not None:
+            pinYin_frame.to_json(frame_path)
+        else:
+            pinYin_frame.to_json(
+                os.path.join(
+                    os.path.dirname(self.filepath),
+                    '_{}.json'.format(os.path.basename(self.filepath))))
+
+        # Return the dataframe
+        self.pinYin_frame = pinYin_frame
+        return self.pinYin_frame
 
     def init_settings(self):
         # Init settings
@@ -28,18 +63,23 @@ class SCEL_cellDict(object):
         # Read the next [step] bytes and return the unpacked bytes
 
         # The [step] value should be even
-        assert(step % 2 == 0)
+        assert (step % 2 == 0)
 
         # Read one pair of bytes
         if step == 2:
             self.pos += step
-            return struct.unpack(self.format, self.rawdata[self.pos-2:self.pos])[0]
+            return struct.unpack(self.format,
+                                 self.rawdata[self.pos - 2:self.pos])[0]
 
         # Read several pair of bytes
-        grouped_each_pairBytes = [self.rawdata[self.pos+i*2:self.pos+i*2+2]
-                                  for i in range(step >> 1)]
+        grouped_each_pairBytes = [
+            self.rawdata[self.pos + i * 2:self.pos + i * 2 + 2]
+            for i in range(step >> 1)
+        ]
         self.pos += step
-        return [struct.unpack(self.format, e)[0] for e in grouped_each_pairBytes]
+        return [
+            struct.unpack(self.format, e)[0] for e in grouped_each_pairBytes
+        ]
 
     def _str(self, lst):
         # Convert lst into string
@@ -79,10 +119,10 @@ class SCEL_cellDict(object):
         self.pos = 0x130
 
         # Read infos in order
-        self.Name = self._str(self._forward(0x330-self.pos))
-        self.Type = self._str(self._forward(0x540-self.pos))
-        self.Description = self._str(self._forward(0xd40-self.pos))
-        self.Example = self._str(self._forward(self.pinYin_offset-self.pos))
+        self.Name = self._str(self._forward(0x330 - self.pos))
+        self.Type = self._str(self._forward(0x540 - self.pos))
+        self.Description = self._str(self._forward(0xd40 - self.pos))
+        self.Example = self._str(self._forward(self.pinYin_offset - self.pos))
 
     def read_pinYin_table(self):
         # Read pinYin table of the .scel file
@@ -93,7 +133,6 @@ class SCEL_cellDict(object):
         # table: table of pinYins,
         # count: count of pinYins
         self.pinYin_table = dict()
-        self.pinYin_count = dict()
 
         # First 4 bytes is fixed for check
         self._forward(4)
@@ -111,21 +150,13 @@ class SCEL_cellDict(object):
             # self.pos += length
             # Record
             self.pinYin_table[idx] = pinYin
-            self.pinYin_count[pinYin] = 0
+            self.pinYin_count[pinYin] = [0, dict()]
 
         return self.pinYin_table
 
-    def get_pinYin(self, idx, count=False):
-        # Check out the [idx] of the pinYin table,
-        # Count getting times if [count] is True
-        if idx not in self.pinYin_table:
-            return '--'
-
-        pinYin = self.pinYin_table[idx]
-        if count:
-            self.pinYin_count[pinYin] += 1
-
-        return pinYin
+    def get_pinYin(self, idx):
+        # Check out the [idx] of the pinYin table
+        return self.pinYin_table.get(idx, '--')
 
     def read_ciZu(self):
         # Read ciZu in the .scel file
@@ -147,8 +178,7 @@ class SCEL_cellDict(object):
             length = self._forward()
             # pinYin
             pinYin_idxs = self._forward(length)
-            pinYin = ''.join([self.get_pinYin(idx, count=True)
-                              for idx in pinYin_idxs])
+            pinYin = '\''.join([self.get_pinYin(idx) for idx in pinYin_idxs])
 
             # Read the ciZu words
             for _ in range(num):
@@ -164,32 +194,33 @@ class SCEL_cellDict(object):
                 # Record
                 self.words.append((count, pinYin, word))
 
+                # Add pinYin into pinYin_count
+                _pinYin = pinYin.replace('\'', '')
+                if _pinYin not in self.pinYin_count:
+                    self.pinYin_count[_pinYin] = [0, dict()]
+                self.pinYin_count[_pinYin][0] += count
+                self.pinYin_count[_pinYin][1][word] = count
+
+                # Split single char,
+                # and add single char pinYin into pinYin_count
+                for py, char in zip(pinYin.split('\''), word):
+                    self.pinYin_count[py][0] += count
+                    self.pinYin_count[py][1][char] = count
+
         return self.words
 
 
 # %%
 # File settings
-scel_path = os.path.join(os.path.dirname(__file__),
-                         '..',
-                         'cellDicts',
+scel_path = os.path.join(os.path.dirname(__file__), '..', 'cellDicts',
                          '计算机词汇大全【官方推荐】.scel')
 
 celldict = SCEL_cellDict(scel_path)
 celldict.pipeline()
 
 # %%
-(celldict.Name,
- celldict.Type,
- celldict.Description,
- celldict.Example)
+(celldict.Name, celldict.Type, celldict.Description, celldict.Example)
 
 # %%
-celldict.pinYin_table
-
-# %%
-celldict.words
-
-# %%
-celldict.pinYin_count
-
+celldict.solid_pinYin_count()
 # %%
