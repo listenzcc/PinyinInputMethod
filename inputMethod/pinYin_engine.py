@@ -20,6 +20,7 @@ class PinYinTree(object):
     # PinYin tree for quickly checkout
     def __init__(self):
         self.root = dict()
+        logger.debug('Tree initalized')
 
     def generate(self, frame):
         # Generate based on [frame]
@@ -44,42 +45,64 @@ class PinYinTree(object):
         # Reach the end of the pinYin
         node['='] = pinYin
 
+    def found_match_pattern(self, pattern, remain, node):
+        # Found matched pattern,
+        # the original query is string of [pattern] + [remain],
+        # [node] is current node, derived from root using [pattern].
+        pass
+
     def walk_through(self, track):
         # Walk through the tree using the [track],
         # record the known pinYins during the travel,
         # the remains and the found will be recorded synatisticlly.
         founds = []
         node = self.root
-        remain = track
-        while len(remain) > 0:
+        pos = 0
+        while pos < len(track):
             if '=' in node:
                 # Find known pinYin
-                founds.append([node['='], remain])
+                founds.append([node['='], track[pos:], []])
 
-            if remain[0] not in node:
+            if track[pos] not in node:
                 # Can not move forward
-                founds.append(['-', remain])
-                node = self.root
-                print('- Back to root')
-                continue
+                founds.append([
+                    '{}...'.format(track[:pos]), track[pos:],
+                    self.walk_to_ends(node)
+                ])
 
-            if remain[0] in node:
+                return founds
+
+            if track[pos] in node:
                 # Can move forward
-                node = node[remain[0]]
-                print(f'- Forward to {remain[0]}')
-                remain = remain[1:]
+                node = node[track[pos]]
+                pos += 1
                 continue
 
         if '=' in node:
             # Find known pinYin in the last character
-            founds.append([node['='], remain])
+            founds.append([node['='], '', []])
         else:
             # Unknow the pinYin in the last character
-            founds.append(['-', remain])
+            founds.append(['{}...'.format(track), '', []])
 
         return founds
 
+    def walk_to_ends(self, node):
+        # Walk from [node] to every available ends
+        self.this_ends = []
+        self._walk_to_ends(node)
+        return self.this_ends
+
+    def _walk_to_ends(self, node):
+        if '=' in node:
+            self.this_ends.append(node['='])
+        for e in node:
+            if e == '=':
+                continue
+            self._walk_to_ends(node[e])
+
     def checkout(self, track):
+        # Deperacted since "walk_through" method outperforms it
         # Checkout all known pinYins using [track]
         # [track] may be incomplete pinYin segment
         t = time.time()
@@ -107,48 +130,54 @@ class PinYinEngine(object):
     def __init__(self, frame_path):
         # Init the engine with dataframe in [frame_path]
         self.frame = pd.read_json(frame_path)
+        self.tree = PinYinTree()
+        self.tree.generate(self.frame)
 
     def has_pinYin(self, pinYin):
         # Tell if the frame has [pinYin] index
         if len(pinYin) == 0:
-            return True
+            return False
         return pinYin in self.frame.index
 
-    def checkout(self, key):
-        # Checkout pinYins startswith [key]
+    def fetch(self, pinYin):
+        # Fetch ciZu of [pinYin] in the frame
+        try:
+            cands = self.frame.Candidates.loc[pinYin]
+        except NameError:
+            logger.error(f'Can not fetch {pinYin} from the frame')
+            return []
+        return [e for e in cands.items()]
+
+    def checkout(self, inp):
+        # Checkout [inp]
+        # Record start time
         t = time.time()
-        found = self.frame.loc[self.frame.index.map(
-            lambda x: x.startswith(key))]
-        logger.debug(
-            f'Checkout startswith "{key}" used {time.time() - t} seconds')
-        return found
 
-    def split(self, content):
-        # Split [content] using longest match method
-        # [content] should be string
-        assert (isinstance(content, str))
+        # Parse [inp] using pinYin Tree
+        parsed = self.tree.walk_through(inp)
+        parsed.reverse()
 
-        # If got empty string,
-        # return empty string directly
-        if len(content) == 0:
-            return ''
+        # Fetch contents from the frame
+        fetched = dict()
+        for pinYin, remain, guessed in parsed:
 
-        # Using floating window to split
-        segments = []
-        while len(content) > 0:
-            # for _ in range(10):
-            # Find longest matched pattern from tail to head,
-            # add the matched pattern into [segments],
-            # if pattern is found in frame,
-            # or the remaining pattern has only one character,
-            # !!! Make sure the content is eventually cut to nothing.
-            for j in range(len(content)):
-                e = len(content) - j
-                if self.has_pinYin(content[:e]) or e == 1:
-                    segments.append(content[:e])
-                    content = content[e:]
-                    break
-        return segments
+            def _cat():
+                # Cat [pinYin] and [remain]
+                return f'{pinYin}\'{remain}'
+
+            print(pinYin, remain, guessed)
+            if len(guessed) == 0:
+                fetched[_cat()] = sorted(self.fetch(pinYin),
+                                         reverse=True,
+                                         key=lambda x: x[1])
+            else:
+                tmp = []
+                for py in guessed:
+                    tmp += self.fetch(py)
+                fetched[_cat()] = sorted(tmp, reverse=True, key=lambda x: x[1])
+
+        logger.debug(f'Checkout {inp} used {time.time() - t} seconds')
+        return fetched
 
 
 # %%
@@ -159,25 +188,8 @@ engine = PinYinEngine(frame_path)
 engine.frame
 
 # %%
-engine.split('aozuoyi')
+engine.checkout('zuoyzhouqi')
 
 # %%
-tree = PinYinTree()
-tree.generate(engine.frame)
-# tree.root
-
-# %%
-tree.walk_through('zuoyezhouqi')
-
-# %%
-tree.walk_through('zuoyzhouqi')
-# %%
-# engine.checkout('zuo')
-
-# %%
-# tree.checkout('an')
-# %%
-# engine.frame.loc[['a', 'an']]
-# %%
-# engine.frame.loc[engine.frame.index.map(lambda x: x.startswith('a'))]
+engine.checkout('angyang')
 # %%

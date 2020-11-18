@@ -204,10 +204,16 @@ class SCEL_cellDict(object):
                 self.pinYin_count[_pinYin][1][word] = count
 
                 # Split single char,
+                # !!! char here means chinese character not pinYin letter,
                 # and add single char pinYin into pinYin_count
                 for py, char in zip(pinYin.split('\''), word):
                     self.pinYin_count[py][0] += count
-                    self.pinYin_count[py][1][char] = count
+                    # Frequency count of single char,
+                    # it will be very large,
+                    # compare to pinYin of a ciZu
+                    if char not in self.pinYin_count[py][1]:
+                        self.pinYin_count[py][1][char] = 0
+                    self.pinYin_count[py][1][char] += count
 
         return self.words
 
