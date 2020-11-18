@@ -3,6 +3,7 @@
 # Aim: Provide functional engine of pinYin inputMethod interface
 
 # %%
+import json
 import logging
 import os
 import sys
@@ -148,8 +149,11 @@ class PinYinEngine(object):
             return []
         return [e for e in cands.items()]
 
-    def checkout(self, inp):
-        # Checkout [inp]
+    def checkout(self, inp, return_json=False):
+        # Checkout [inp] from the frame,
+        # the results will be returned as [feched] in DataFrame type,
+        # the output [fetched] will be converted into json type if [return_json] is set to True
+
         # Record start time
         t = time.time()
 
@@ -157,7 +161,10 @@ class PinYinEngine(object):
         parsed = self.tree.walk_through(inp)
         parsed.reverse()
 
-        # Fetch contents from the frame
+        # Fetch contents from the frame,
+        # [fetched] is a dict:
+        #   key is pinYin of longest matched;
+        #   value is the list of ciZu and its frequency count.
         fetched = dict()
         for pinYin, remain, guessed in parsed:
             # Fetch [pinYin] or [guessed] pinYin from the frame,
@@ -184,12 +191,32 @@ class PinYinEngine(object):
                     if py.endswith(remain):
                         best_guess += self.fetch(py)
 
-                fetched[_pinYin] = sorted(
-                    best_guess, reverse=True, key=lambda x: x[1]) + sorted(
-                        all_guess, reverse=True, key=lambda x: x[1])
+                fetched[pinYin + remain] = sorted(best_guess,
+                                                  reverse=True,
+                                                  key=lambda x: x[1])
 
-        logger.debug(f'Checkout {inp} used {time.time() - t} seconds')
+                fetched[_pinYin] = sorted(all_guess,
+                                          reverse=True,
+                                          key=lambda x: x[1])
+
+        fetched = self.to_pandas(fetched)
+
+        if return_json:
+            fetched = fetched.to_json()
+
+        logger.debug(f'Checkout "{inp}" used {time.time() - t} seconds')
         return fetched
+
+    def to_pandas(self, fetched):
+        # Convert [fetched] to pandas DataFrame,
+        # [fetched] is from the checkout method
+
+        cat = []
+        for pinYin in fetched:
+            cat.extend([[pinYin, e[0], e[1]] for e in fetched[pinYin]])
+
+        frame = pd.DataFrame(cat, columns=['PinYin', 'CiZu', 'Count'])
+        return frame
 
 
 # %%
@@ -200,8 +227,11 @@ engine = PinYinEngine(frame_path)
 engine.frame
 
 # %%
-engine.checkout('zuoyzhouqi')
+fetched = engine.checkout('zuoi', return_json=False)
+fetched
 
 # %%
-engine.checkout('zuoi')
+fetched = engine.checkout('zuoi', return_json=True)
+fetched
+
 # %%
