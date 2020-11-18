@@ -54,7 +54,7 @@ class PinYinTree(object):
     def walk_through(self, track):
         # Walk through the tree using the [track],
         # record the known pinYins during the travel,
-        # the remains and the found will be recorded synatisticlly.
+        # the remains and the found will be recorded synatistically.
         founds = []
         node = self.root
         pos = 0
@@ -160,21 +160,33 @@ class PinYinEngine(object):
         # Fetch contents from the frame
         fetched = dict()
         for pinYin, remain, guessed in parsed:
+            # Fetch [pinYin] or [guessed] pinYin from the frame,
+            # the fetched ciZus will be sorted by their frequency count
+            _pinYin = f'{pinYin}\'{remain}'
 
-            def _cat():
-                # Cat [pinYin] and [remain]
-                return f'{pinYin}\'{remain}'
-
-            print(pinYin, remain, guessed)
             if len(guessed) == 0:
-                fetched[_cat()] = sorted(self.fetch(pinYin),
-                                         reverse=True,
-                                         key=lambda x: x[1])
+                # The pinYin is of complete match
+                fetched[_pinYin] = sorted(self.fetch(pinYin),
+                                          reverse=True,
+                                          key=lambda x: x[1])
+
             else:
-                tmp = []
+                # The pinYin is of partial match,
+                # fetch every possible auto-completed match [guessed]
+                all_guess = []
+                best_guess = []
                 for py in guessed:
-                    tmp += self.fetch(py)
-                fetched[_cat()] = sorted(tmp, reverse=True, key=lambda x: x[1])
+                    all_guess += self.fetch(py)
+
+                    # Give some "intelligence" to the fetcher,
+                    # if the guessed pinYin ends with "remain",
+                    # the pinYin will be stored in [best_guess]
+                    if py.endswith(remain):
+                        best_guess += self.fetch(py)
+
+                fetched[_pinYin] = sorted(
+                    best_guess, reverse=True, key=lambda x: x[1]) + sorted(
+                        all_guess, reverse=True, key=lambda x: x[1])
 
         logger.debug(f'Checkout {inp} used {time.time() - t} seconds')
         return fetched
@@ -191,5 +203,5 @@ engine.frame
 engine.checkout('zuoyzhouqi')
 
 # %%
-engine.checkout('angyang')
+engine.checkout('zuoi')
 # %%
