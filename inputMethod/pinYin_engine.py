@@ -55,7 +55,7 @@ class PinYinTree(object):
     def walk_through(self, track):
         # Walk through the tree using the [track],
         # record the known pinYins during the travel,
-        # the remains and the found will be recorded synatistically.
+        # the remains and the found will be recorded synchronously.
         founds = []
         node = self.root
         pos = 0
@@ -70,7 +70,6 @@ class PinYinTree(object):
                     '{}...'.format(track[:pos]), track[pos:],
                     self.walk_to_ends(node)
                 ])
-
                 return founds
 
             if track[pos] in node:
@@ -83,7 +82,7 @@ class PinYinTree(object):
             # Find known pinYin in the last character
             founds.append([node['='], '', []])
         else:
-            # Unknow the pinYin in the last character
+            # Unknown pinYin in the last character
             founds.append(['{}...'.format(track), '', self.walk_to_ends(node)])
 
         return founds
@@ -91,7 +90,10 @@ class PinYinTree(object):
     def walk_to_ends(self, node):
         # Walk from [node] to every available ends
         self.this_ends = []
-        self._walk_to_ends(node)
+        for e in node:
+            if e == '=':
+                continue
+            self._walk_to_ends(node[e])
         return self.this_ends
 
     def _walk_to_ends(self, node):
@@ -103,7 +105,7 @@ class PinYinTree(object):
             self._walk_to_ends(node[e])
 
     def checkout(self, track):
-        # Deperacted since "walk_through" method outperforms it
+        # Deprecated since "walk_through" method outperforms it
         # Checkout all known pinYins using [track]
         # [track] may be incomplete pinYin segment
         t = time.time()
@@ -151,7 +153,7 @@ class PinYinEngine(object):
 
     def checkout(self, inp, return_json=False):
         # Checkout [inp] from the frame,
-        # the results will be returned as [feched] in DataFrame type,
+        # the results will be returned as [fetched] in DataFrame type,
         # the output [fetched] will be converted into json type if [return_json] is set to True
 
         # Record start time
@@ -172,7 +174,7 @@ class PinYinEngine(object):
             # the fetched ciZus will be sorted by their frequency count
             _pinYin = f'{pinYin}\'{remain}'
 
-            if len(guessed) == 0:
+            if len(guessed) == 0 and not pinYin.endswith('...'):
                 # The pinYin is of complete match
                 fetched[_pinYin] = sorted(self.fetch(pinYin),
                                           reverse=True,
@@ -196,10 +198,12 @@ class PinYinEngine(object):
                                                   reverse=True,
                                                   key=lambda x: x[1])
 
-                fetched[_pinYin] = sorted(all_guess,
-                                          reverse=True,
-                                          key=lambda x: x[1])
+                if len(remain) > 0:
+                    fetched[_pinYin] = sorted(all_guess,
+                                              reverse=True,
+                                              key=lambda x: x[1])
 
+        print(fetched)
         fetched = self.to_pandas(fetched)
 
         if return_json:
@@ -227,9 +231,6 @@ if __name__ == '__main__':
 
     engine = PinYinEngine(frame_path)
     engine.frame
-
-    fetched = engine.checkout('zuoi', return_json=False)
-    fetched
 
     fetched = engine.checkout('ces', return_json=True)
     fetched
