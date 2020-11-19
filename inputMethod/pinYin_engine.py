@@ -84,7 +84,7 @@ class PinYinTree(object):
             founds.append([node['='], '', []])
         else:
             # Unknow the pinYin in the last character
-            founds.append(['{}...'.format(track), '', []])
+            founds.append(['{}...'.format(track), '', self.walk_to_ends(node)])
 
         return founds
 
@@ -160,6 +160,7 @@ class PinYinEngine(object):
         # Parse [inp] using pinYin Tree
         parsed = self.tree.walk_through(inp)
         parsed.reverse()
+        print(parsed)
 
         # Fetch contents from the frame,
         # [fetched] is a dict:
@@ -188,7 +189,7 @@ class PinYinEngine(object):
                     # Give some "intelligence" to the fetcher,
                     # if the guessed pinYin ends with "remain",
                     # the pinYin will be stored in [best_guess]
-                    if py.endswith(remain):
+                    if py.endswith(remain) and len(py) > len(inp):
                         best_guess += self.fetch(py)
 
                 fetched[pinYin + remain] = sorted(best_guess,
@@ -220,18 +221,17 @@ class PinYinEngine(object):
 
 
 # %%
-frame_path = os.path.join(os.path.dirname(__file__), '..', 'cellDicts',
-                          '_计算机词汇大全【官方推荐】.scel.json')
+if __name__ == '__main__':
+    frame_path = os.path.join(os.path.dirname(__file__), '..', 'cellDicts',
+                              '_计算机词汇大全【官方推荐】.scel.json')
 
-engine = PinYinEngine(frame_path)
-engine.frame
+    engine = PinYinEngine(frame_path)
+    engine.frame
 
-# %%
-fetched = engine.checkout('zuoi', return_json=False)
-fetched
+    fetched = engine.checkout('zuoi', return_json=False)
+    fetched
 
-# %%
-fetched = engine.checkout('zuoi', return_json=True)
-fetched
+    fetched = engine.checkout('ces', return_json=True)
+    fetched
 
 # %%
