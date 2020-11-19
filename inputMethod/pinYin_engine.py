@@ -199,6 +199,8 @@ class PinYinEngine(object):
                                                   key=lambda x: x[1])
 
                 if len(remain) > 0:
+                    # If remain is empty string,
+                    # avoid add the guessed pinYins since they are the same as [best_guess]
                     fetched[_pinYin] = sorted(all_guess,
                                               reverse=True,
                                               key=lambda x: x[1])
