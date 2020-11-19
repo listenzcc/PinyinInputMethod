@@ -12,7 +12,7 @@ class Worker(object):
     def response(self, path):
         # Received path is like this:
         #   /pinYinCheckout?query=[pinYin]
-        #     [pinYin] is the pinYin of interestf
+        #     [pinYin] is the pinYin of interest
 
         # Format check
         head = 'pinYinCheckOut?query='

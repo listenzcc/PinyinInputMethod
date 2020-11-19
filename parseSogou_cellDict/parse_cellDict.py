@@ -220,15 +220,26 @@ class SCEL_cellDict(object):
 
 # %%
 # File settings
-scel_path = os.path.join(os.path.dirname(__file__), '..', 'cellDicts',
-                         '计算机词汇大全【官方推荐】.scel')
+folder = os.path.join(os.path.dirname(__file__), '..', 'cellDicts')
 
-celldict = SCEL_cellDict(scel_path)
-celldict.pipeline()
+for name in os.listdir(folder):
+    if not name.endswith('.scel'):
+        continue
+    print(name)
+    celldict = SCEL_cellDict(os.path.join(folder, name))
+    celldict.pipeline()
+    celldict.solid_pinYin_count()
 
 # %%
-(celldict.Name, celldict.Type, celldict.Description, celldict.Example)
 
-# %%
-celldict.solid_pinYin_count()
-# %%
+# scel_path = os.path.join(os.path.dirname(__file__), '..', 'cellDicts',
+#                          '计算机词汇大全【官方推荐】.scel')
+
+# celldict = SCEL_cellDict(scel_path)
+# celldict.pipeline()
+
+# # %%
+# (celldict.Name, celldict.Type, celldict.Description, celldict.Example)
+
+# # %%
+# celldict.solid_pinYin_count()
