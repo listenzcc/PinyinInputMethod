@@ -1,6 +1,7 @@
 # File: web_compat.py
 # Aim: Provide web compat interface of the package
 
+import threading
 from . import _cellDict_path
 from .pinYin_engine import PinYinEngine
 

@@ -17,6 +17,19 @@ if len(logger.handlers) == 0:
 logger.setLevel(logging.DEBUG)
 
 
+def merge_dicts(dicts):
+    merged = dict()
+    for dct in dicts:
+        if not isinstance(dct, dict):
+            continue
+        for key, value in dct.items():
+            if key in merged:
+                merged[key] += value
+            else:
+                merged[key] = value
+    return sorted(merged.items(), key=lambda x: x[1], reverse=True)
+
+
 class PinYinTree(object):
     # PinYin tree for quickly checkout
     def __init__(self):
@@ -56,20 +69,17 @@ class PinYinTree(object):
         # Walk through the tree using the [track],
         # record the known pinYins during the travel,
         # the remains and the found will be recorded synchronously.
-        founds = []
+        founds = dict()
         node = self.root
         pos = 0
         while pos < len(track):
             if '=' in node:
                 # Find known pinYin
-                founds.append([node['='], track[pos:], []])
+                founds[track[:pos]] = track[pos:]
 
             if track[pos] not in node:
                 # Can not move forward
-                founds.append([
-                    '{}...'.format(track[:pos]), track[pos:],
-                    self.walk_to_ends(node)
-                ])
+                founds[track[:pos]] = track[pos:]
                 return founds
 
             if track[pos] in node:
@@ -78,64 +88,8 @@ class PinYinTree(object):
                 pos += 1
                 continue
 
-        if '=' in node:
-            # Find known pinYin in the last character
-            founds.append([node['='], '', []])
-        else:
-            # Unknown pinYin in the last character
-            founds.append(['{}...'.format(track), '', self.walk_to_ends(node)])
-
+        founds[track] = ''
         return founds
-
-    def walk_to_ends(self, node):
-        # Walk from [node] to every available ends
-        self.this_ends = []
-        for e in node:
-            if e == '=':
-                continue
-            self._walk_to_ends(node[e])
-        return self.this_ends
-
-    def _walk_to_ends(self, node):
-        if '=' in node:
-            self.this_ends.append(node['='])
-        for e in node:
-            if e == '=':
-                continue
-            self._walk_to_ends(node[e])
-
-    def checkout(self, track):
-        # Deprecated since "walk_through" method outperforms it
-        # Checkout all known pinYins using [track]
-        # [track] may be incomplete pinYin segment
-        t = time.time()
-
-        # Checkout from the root
-        node = self.root
-        for j, step in enumerate(track):
-            if not step in node:
-                # Found non-matching step,
-                # something is wrong,
-                # logging error and return with None
-                logger.error(f'Fail to checkout: {track} on {j}_th char')
-                return None
-
-            # Move forward
-            node = node[step]
-
-        # See what we got
-        logger.debug(f'Checkout "{track}" used {time.time() - t} seconds')
-        return node
-
-
-def add_dict(dst, src):
-    # Add dict [src] into [dst]
-    # print(dst, src)
-    for key, value in src.items():
-        if key in dst:
-            dst[key] += value
-        else:
-            dst[key] = value
 
 
 class PinYinEngine(object):
@@ -146,6 +100,8 @@ class PinYinEngine(object):
         self.frame = pd.read_json(frame_path)
         self.tree = PinYinTree()
         self.tree.generate(self.frame)
+
+        self.go = True
 
     def has_pinYin(self, pinYin):
         # Tell if the frame has [pinYin] index
@@ -168,12 +124,39 @@ class PinYinEngine(object):
         # the output [fetched] will be converted into json type if [return_json] is set to True
 
         # Record start time
+        self.go = True
         t = time.time()
 
         # Parse [inp] using pinYin Tree
         parsed = self.tree.walk_through(inp)
-        parsed.reverse()
-        print(parsed)
+        fetched = pd.DataFrame()
+        for key in sorted(parsed, reverse=True):
+            remain = parsed[key]
+            name = f'{key}\'{remain}'
+            if len(remain) == 0:
+                found = self.frame.loc[self.frame.index.map(
+                    lambda x: x.startswith(key))]
+            else:
+                found = self.frame.loc[self.frame.index.map(lambda x: all(
+                    [x.startswith(key), not x.startswith(key + remain[0])]))]
+
+            fetched = fetched.append(
+                pd.Series(dict(Candidates=found.Candidates.to_list()),
+                          name=name))
+
+            if not self.go:
+                logger.debug(
+                    f'---- Checkout {inp} used {time.time() - t} seconds')
+                return '{}'
+
+        fetched.Candidates = fetched.Candidates.map(merge_dicts)
+        fetched['Num'] = fetched.Candidates.map(len)
+        if return_json:
+            fetched = fetched.to_json()
+
+        logger.debug(f'Checkout {inp} used {time.time() - t} seconds')
+        return fetched
+        # print(parsed)
 
         # Fetch contents from the frame,
         # [fetched] is a dict:
@@ -216,7 +199,7 @@ class PinYinEngine(object):
                                               reverse=True,
                                               key=lambda x: x[1])
 
-        print(fetched)
+        # print(fetched)
         fetched = self.to_pandas(fetched)
 
         if return_json:
@@ -243,7 +226,13 @@ if __name__ == '__main__':
     engine = PinYinEngine(os.path.join(folder, 'merged.json'))
     engine.frame
 
-    fetched = engine.checkout('yua', return_json=True)
-    fetched
+    t = time.time()
+    fetched = engine.checkout('dian', return_json=False)
+    print('---', time.time() - t)
+    display(fetched)
+
+# %%
+# b = engine.checkout('dian')
+# b
 
 # %%
