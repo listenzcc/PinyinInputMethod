@@ -1,13 +1,13 @@
 # File: web_compat.py
 # Aim: Provide web compat interface of the package
 
-from . import _cellDicts_path
+from . import _cellDict_path
 from .pinYin_engine import PinYinEngine
 
 
 class Worker(object):
     def __init__(self):
-        self.engine = PinYinEngine(_cellDicts_path[0])
+        self.engine = PinYinEngine(_cellDict_path)
 
     def response(self, path):
         # Received path is like this:

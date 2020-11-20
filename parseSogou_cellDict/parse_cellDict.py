@@ -220,26 +220,52 @@ class SCEL_cellDict(object):
 
 # %%
 # File settings
-folder = os.path.join(os.path.dirname(__file__), '..', 'cellDicts')
+if False:
+    folder = os.path.join(os.path.dirname(__file__), '..', 'cellDicts')
 
-for name in os.listdir(folder):
-    if not name.endswith('.scel'):
-        continue
-    print(name)
-    celldict = SCEL_cellDict(os.path.join(folder, name))
-    celldict.pipeline()
-    celldict.solid_pinYin_count()
+    for name in os.listdir(folder):
+        if not name.endswith('.scel'):
+            continue
+        print(name)
+        celldict = SCEL_cellDict(os.path.join(folder, name))
+        celldict.pipeline()
+        celldict.solid_pinYin_count()
 
 # %%
 
-# scel_path = os.path.join(os.path.dirname(__file__), '..', 'cellDicts',
-#                          '计算机词汇大全【官方推荐】.scel')
+folder = os.path.join(os.path.dirname(__file__), '..', 'cellDicts')
+frames = [pd.read_json(os.path.join(folder, name))
+          for name in os.listdir(folder)
+          if all([name.startswith('_'),
+                  name.endswith('json')])]
 
-# celldict = SCEL_cellDict(scel_path)
-# celldict.pipeline()
+frames
 
-# # %%
-# (celldict.Name, celldict.Type, celldict.Description, celldict.Example)
+# %%
+merged_frame = pd.concat(frames, axis=1)
+merged_frame.Candidates = merged_frame.Candidates.fillna({})
+merged_frame.Count = merged_frame.Count.fillna(0)
+merged_frame['Count'] = [e for e in merged_frame.pop('Count').values]
+merged_frame['Candidates'] = [e for e in merged_frame.pop('Candidates').values]
 
-# # %%
-# celldict.solid_pinYin_count()
+merged_frame.Count = merged_frame.Count.map(lambda x: int(sum(x)))
+
+
+def merge_dicts(dicts):
+    merged = dict()
+    for dct in dicts:
+        if not isinstance(dct, dict):
+            continue
+        for key, value in dct.items():
+            if key in merged:
+                merged[key] += value
+            else:
+                merged[key] = value
+    return merged
+
+
+merged_frame.Candidates = merged_frame.Candidates.map(merge_dicts)
+merged_frame.to_json(os.path.join(folder, 'merged.json'))
+merged_frame
+
+# %%

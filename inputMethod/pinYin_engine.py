@@ -142,38 +142,10 @@ class PinYinEngine(object):
     # Main engine of parsing pinYin
     def __init__(self, frame_path):
         # Init the engine with dataframe in [frame_path]
-        if isinstance(frame_path, str):
-            # Read frame from [frame_path]
-            self.frame = pd.read_json(frame_path)
-
-        if isinstance(frame_path, list):
-            # Read frames from [frame_path],
-            # build frame based on several frames
-            frames = [pd.read_json(e) for e in frame_path]
-            self.frame = self.combine_frames(frames)
-
+        # Read frame from [frame_path]
+        self.frame = pd.read_json(frame_path)
         self.tree = PinYinTree()
         self.tree.generate(self.frame)
-
-    def combine_frames(self, frames):
-        combined_frame = pd.concat(frames, axis=1)
-        combined_frame.pop('Count')
-        combined_frame.pop('Candidates')
-        combined_frame['Count'] = 0
-        combined_frame['Candidates'] = [[] for _ in range(len(combined_frame))]
-        # combined_frame.Candidates =
-        # return combined_frame
-        display(combined_frame)
-        # return combined_frame
-
-        # Add frames to combined_frame
-        for frame in frames:
-            display(frame)
-            for key in frame.index:
-                # If key already in combined_frame
-                combined_frame.Candidates[key].append(frame.Candidates[key])
-
-        return combined_frame
 
     def has_pinYin(self, pinYin):
         # Tell if the frame has [pinYin] index
@@ -267,38 +239,11 @@ class PinYinEngine(object):
 
 # %%
 if __name__ == '__main__':
-
     folder = os.path.join(os.path.dirname(__file__), '..', 'cellDicts')
-    filepaths = [os.path.join(folder, name) for name in os.listdir(
-        folder) if name.endswith('.json')]
-
-    engine = PinYinEngine(filepaths)
+    engine = PinYinEngine(os.path.join(folder, 'merged.json'))
     engine.frame
 
-    # fetched = engine.checkout('yua', return_json=True)
-    # fetched
+    fetched = engine.checkout('yua', return_json=True)
+    fetched
 
-# %%
-# fetched
-
-# %%
-engine.frame
-
-# %%
-
-
-def foo(lst):
-    dct = {}
-    for d in lst:
-        for key, value in d.items():
-            if key in dct:
-                dct[key] += value
-            else:
-                dct[key] = value
-    return dct
-
-
-f = engine.frame.copy()
-f.Candidates = f.Candidates.map(foo)
-f
 # %%

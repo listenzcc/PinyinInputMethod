@@ -1,6 +1,7 @@
 # Customed
 *.scel
 _*.json
+cellDicts/merged.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
