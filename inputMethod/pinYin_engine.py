@@ -67,21 +67,33 @@ class PinYinTree(object):
         # Walk through the tree using the [track],
         # record the known pinYins during the travel,
         # the remains and the found will be recorded synchronously.
+        # Found dict will be returned,
+        # every found value is fixed structure: [mainbody, remain],
+        # mainbody is the matched or guessed string prefix,
+        #          if the mainbody is guessed, it will end with "..."
+        # remain is the remaining of the mainbody
         founds = dict()
         node = self.root
         pos = 0
         while pos < len(track):
+            # print(track[:pos])
             if '=' in node:
                 # Find known pinYin
-                founds[track[:pos]] = track[pos:]
+                founds[track[:pos]] = [track[:pos], track[pos:]]
+                # for guessed in self.walk_to_ends(node):
+                #     founds[guessed] = ['{}...'.format(track[:pos]),
+                #                        track[pos:]]
+
+            if all([track[pos] not in node,
+                    '=' not in node]):
+                # Can not move forward
+                founds[track[:pos]] = [track[:pos], track[pos:]]
                 for guessed in self.walk_to_ends(node):
-                    founds[guessed] = track[pos:]
+                    founds[guessed] = ['{}...'.format(track[:pos]),
+                                       track[pos:]]
+                return founds
 
             if track[pos] not in node:
-                # Can not move forward
-                founds[track[:pos]] = track[pos:]
-                for guessed in self.walk_to_ends(node):
-                    founds[guessed] = track[pos:]
                 return founds
 
             if track[pos] in node:
@@ -90,9 +102,10 @@ class PinYinTree(object):
                 pos += 1
                 continue
 
-        founds[track] = ''
+        founds[track] = [track, '']
         for guessed in self.walk_to_ends(node):
-            founds[guessed] = ''
+            founds[guessed] = ['{}...'.format(track), '']
+
         return founds
 
     def walk_to_ends(self, node, limit=3):
@@ -155,16 +168,21 @@ class PinYinEngine(object):
         parsed = self.tree.walk_through(inp)
         fetched = pd.DataFrame()
         for key in sorted(parsed, reverse=True):
-            remain = parsed[key]
-            name = f'{key}\'{remain}'
+            # if len(parsed[key]) == 0:
+            #     # Excape the loop if no values are found
+            #     continue
+            prefix, remain = parsed[key]
+            full = f'{key}\'{remain}'
 
             # Find records based on [key]
             if key not in self.frame.index:
                 # No [key] record found
                 continue
             found = self.frame.loc[key]
-            found.name = name
-            fetched = fetched.append(found)
+            found['Full'] = full
+            found['Prefix'] = prefix
+            found['Remain'] = remain
+            fetched = fetched.append(found, ignore_index=True)
 
         if len(fetched) == 0:
             # No records found
@@ -172,7 +190,7 @@ class PinYinEngine(object):
 
         fetched.Candidates = fetched.Candidates.map(merge_dicts)
         fetched['Num'] = fetched.Candidates.map(len)
-        fetched = fetched[['Candidates', 'Num']]
+        fetched = fetched[['Prefix', 'Remain', 'Full', 'Candidates', 'Num']]
         if return_json:
             fetched = fetched.to_json()
 
@@ -197,7 +215,7 @@ if __name__ == '__main__':
     engine = PinYinEngine(os.path.join(folder, 'merged.json'))
     engine.frame
 
-    fetched = engine.checkout('dian', return_json=False)
+    fetched = engine.checkout('zenm', return_json=False)
     display(fetched)
 
 # %%
