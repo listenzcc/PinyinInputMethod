@@ -84,16 +84,13 @@ class PinYinTree(object):
                 #     founds[guessed] = ['{}...'.format(track[:pos]),
                 #                        track[pos:]]
 
-            if all([track[pos] not in node,
-                    '=' not in node]):
-                # Can not move forward
-                founds[track[:pos]] = [track[:pos], track[pos:]]
-                for guessed in self.walk_to_ends(node):
-                    founds[guessed] = ['{}...'.format(track[:pos]),
-                                       track[pos:]]
-                return founds
-
             if track[pos] not in node:
+                # Can not move forward
+                # founds[track[:pos]] = [track[:pos], track[pos:]]
+                if '=' not in node:
+                    for guessed in self.walk_to_ends(node):
+                        founds[guessed] = ['{}...'.format(track[:pos]),
+                                           track[pos:]]
                 return founds
 
             if track[pos] in node:
