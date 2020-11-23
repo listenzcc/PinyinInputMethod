@@ -24,34 +24,6 @@ class SCEL_cellDict(object):
         # default is using empty pinYin_count as cold startup.
         self.pinYin_count = pinYin_count
 
-    def solid_pinYin_count(self, frame_path=None):
-        # Convert pinYin_count into re-useable pandas dataframe,
-        # and save it into the file of frame_path using .json format.
-        # A timer is used to see if the operation takes too long
-        t = time.time()
-
-        # Convert the pinYin_count dict into dataframe
-        pinYin_frame = pd.DataFrame(celldict.pinYin_count).transpose()
-
-        # Sort the columns of the dataframe
-        pinYin_frame.columns = ['Count', 'Candidates']
-        print('Passed {} seconds'.format(time.time() - t))
-
-        # Save the dataframe to the file on [frame_path],
-        # if the frame_path is not specified,
-        # save besides of the .scel file with prefix of '_'
-        if frame_path is not None:
-            pinYin_frame.to_json(frame_path)
-        else:
-            pinYin_frame.to_json(
-                os.path.join(
-                    os.path.dirname(self.filepath),
-                    '_{}.json'.format(os.path.basename(self.filepath))))
-
-        # Return the dataframe
-        self.pinYin_frame = pinYin_frame
-        return self.pinYin_frame
-
     def init_settings(self):
         # Init settings
         self.legal_head = b'\x40\x15\x00\x00\x44\x43\x53\x01\x01\x00\x00\x00'

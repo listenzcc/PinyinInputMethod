@@ -73,6 +73,7 @@ class PinYinTree(object):
         #          if the mainbody is guessed, it will end with "..."
         # remain is the remaining of the mainbody
         founds = dict()
+
         node = self.root
         pos = 0
         while pos < len(track):
@@ -85,6 +86,8 @@ class PinYinTree(object):
                 #                        track[pos:]]
 
             if track[pos] not in node:
+                if pos == 0:
+                    return founds
                 # Can not move forward
                 # founds[track[:pos]] = [track[:pos], track[pos:]]
                 if '=' not in node:
@@ -136,7 +139,44 @@ class PinYinEngine(object):
         self.tree = PinYinTree()
         self.tree.generate(self.frame)
 
+        self.user_frame = self.read_user_frame()
+        self.user_tree = PinYinTree()
+        self.user_tree.generate(self.user_frame)
+
         self.go = True
+
+    def read_user_frame(self):
+        folder = os.path.join(os.path.dirname(__file__), '..', 'cellDicts')
+        user_frame_path = os.path.join(folder, 'user_frame.json')
+        if os.path.isfile(user_frame_path):
+            user_frame = pd.read_json(user_frame_path)
+        else:
+            user_frame = pd.DataFrame()
+        self.user_frame_path = user_frame_path
+        return user_frame
+
+    def save_user_frame(self):
+        self.user_frame.to_json(self.user_frame_path)
+
+    def add_user_frame(self, pinYin, ciZu):
+        if pinYin not in self.user_frame.index:
+            self.user_frame = self.user_frame.append(pd.Series(dict(
+                Count=0,
+                Candidates={}
+            ), name=pinYin))
+
+        if ciZu not in self.user_frame.loc[pinYin].Candidates:
+            self.user_frame.loc[pinYin].Candidates[ciZu] = 1
+        else:
+            self.user_frame.loc[pinYin].Candidates[ciZu] += 1
+        self.user_frame.Count.loc[pinYin] += 1
+
+        self.user_tree.add(pinYin)
+
+        print()
+        print('--------------------------------------')
+        print(self.user_frame)
+        self.save_user_frame()
 
     def has_pinYin(self, pinYin):
         # Tell if the frame has [pinYin] index
@@ -158,28 +198,31 @@ class PinYinEngine(object):
         # the results will be returned as [fetched] in DataFrame type,
         # the output [fetched] will be converted into json type if [return_json] is set to True
 
-        # Record start time
+        # Start checkout
         t = time.time()
+        fetched = pd.DataFrame()
 
         # Parse [inp] using pinYin Tree
-        parsed = self.tree.walk_through(inp)
-        fetched = pd.DataFrame()
-        for key in sorted(parsed, reverse=True):
-            # if len(parsed[key]) == 0:
-            #     # Excape the loop if no values are found
-            #     continue
-            prefix, remain = parsed[key]
-            full = f'{key}\'{remain}'
+        for j, parsed in enumerate([self.user_tree.walk_through(inp),
+                                    self.tree.walk_through(inp)]):
+            # parsed = self.tree.walk_through(inp)
+            frame = self.frame
+            if j == 0:
+                frame = self.user_frame
 
-            # Find records based on [key]
-            if key not in self.frame.index:
-                # No [key] record found
-                continue
-            found = self.frame.loc[key]
-            found['Full'] = full
-            found['Prefix'] = prefix
-            found['Remain'] = remain
-            fetched = fetched.append(found, ignore_index=True)
+            for key in sorted(parsed, reverse=True):
+                prefix, remain = parsed[key]
+                full = f'{key}\'{remain}'
+
+                # Find records based on [key]
+                if key not in frame.index:
+                    # No [key] record found
+                    continue
+                found = frame.loc[key].copy()
+                found['Full'] = full
+                found['Prefix'] = prefix
+                found['Remain'] = remain
+                fetched = fetched.append(found, ignore_index=True)
 
         if len(fetched) == 0:
             # No records found
@@ -212,7 +255,7 @@ if __name__ == '__main__':
     engine = PinYinEngine(os.path.join(folder, 'merged.json'))
     engine.frame
 
-    fetched = engine.checkout('zenm', return_json=False)
+    fetched = engine.checkout('z', return_json=False)
     display(fetched)
 
 # %%
