@@ -255,7 +255,7 @@ if __name__ == '__main__':
     engine = PinYinEngine(os.path.join(folder, 'merged.json'))
     engine.frame
 
-    fetched = engine.checkout('z', return_json=False)
+    fetched = engine.checkout('zishubuding', return_json=False)
     display(fetched)
 
 # %%
