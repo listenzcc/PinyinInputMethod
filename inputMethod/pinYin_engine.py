@@ -212,6 +212,8 @@ class PinYinEngine(object):
 
             for key in sorted(parsed, reverse=True):
                 prefix, remain = parsed[key]
+                if len(prefix) == 0:
+                    continue
                 full = f'{key}\'{remain}'
 
                 # Find records based on [key]
@@ -255,7 +257,7 @@ if __name__ == '__main__':
     engine = PinYinEngine(os.path.join(folder, 'merged.json'))
     engine.frame
 
-    fetched = engine.checkout('zishubuding', return_json=False)
+    fetched = engine.checkout(',', return_json=False)
     display(fetched)
 
 # %%
