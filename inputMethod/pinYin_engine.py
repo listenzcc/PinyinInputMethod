@@ -103,8 +103,9 @@ class PinYinTree(object):
                 continue
 
         founds[track] = [track, '']
-        for guessed in self.walk_to_ends(node):
-            founds[guessed] = ['{}...'.format(track), '']
+        if '=' not in node:
+            for guessed in self.walk_to_ends(node):
+                founds[guessed] = ['{}...'.format(track), '']
 
         return founds
 
