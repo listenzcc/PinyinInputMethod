@@ -18,3 +18,10 @@ def query(request, pinYin):
     found = data.query(pinYin)
     found.index = range(len(found))
     return HttpResponse(found.to_json(), content_type='application/json')
+
+
+def guess(request, zi):
+    print(request)
+    found = data.guess(zi)
+    found.index = range(len(found))
+    return HttpResponse(found.to_json(), content_type='application/json')

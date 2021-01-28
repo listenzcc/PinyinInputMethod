@@ -2,6 +2,7 @@
 import os
 import pandas as pd
 import jieba
+import re
 
 from tqdm.auto import tqdm
 from pypinyin import pinyin, lazy_pinyin, Style
@@ -23,6 +24,10 @@ contents = sorted(set(contents))
 contents
 
 
+def match(pattern, string):
+    return re.match(pattern, string) is not None
+
+
 class Data(object):
     def __init__(self):
         self.data = dict()
@@ -42,10 +47,28 @@ class Data(object):
         df['pinYin'] = self.data.keys()
         df = df[['pinYin', 'candidates', 'freq']]
         self.df = df.sort_values('freq', ascending=False)
-        return df
+
+    def mk_contentframe(self, contents):
+        cf = pd.DataFrame(contents)
+        cf.columns = ['sentence']
+        self.cf = cf
 
     def query(self, pinYin):
-        return self.df[self.df['pinYin'].str.startswith(pinYin)]
+        # found = self.df[self.df['pinYin'].str.startswith(pinYin)]
+        p = '.*'.join(pinYin)
+        p = p + '.*'
+        found = self.df[self.df['pinYin'].map(lambda e: match(p, e))]
+        return found
+
+    def guess(self, zi):
+        def cut(s, zi=zi):
+            j = max(s.find(zi)-4, 0)
+            c = s[j:]
+            return c.replace(zi, f'<strong>{zi}</strong>')
+
+        found = self.cf[self.cf['sentence'].str.contains(zi)]
+        found['sentence'] = found['sentence'].map(cut)
+        return found
 
 
 data = Data()
@@ -57,3 +80,4 @@ for string in tqdm(contents):
         data.add(pinYin, c)
 
 data.mk_dataframe()
+data.mk_contentframe(contents)

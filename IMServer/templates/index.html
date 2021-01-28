@@ -4,6 +4,48 @@
 <head>
     <meta chars="utf-8" />
     <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style type="text/css">
+        div {
+            margin: 3px;
+            padding: 2px
+        }
+        
+        div#Area-3 {
+            width: 6in;
+            height: 4in;
+            overflow-y: scroll;
+        }
+        
+        div#Area-4 {
+            width: 6in;
+            height: 4in;
+            overflow-y: scroll;
+        }
+        
+        input#Input-2 {
+            width: 6in;
+            height: 1in;
+            overflow-y: scroll;
+        }
+        
+        div.row-candidates {
+            display: flex;
+            background-color: antiquewhite;
+        }
+        
+        p.col-candidate {
+            margin-left: 10px;
+        }
+        
+        p.col-candidate:hover {
+            background-color: yellow;
+            transform: rotate(7deg) scale(1.2);
+        }
+        
+        p.row-sentence:hover {
+            background-color: yellow;
+        }
+    </style>
 </head>
 
 <body>
@@ -12,12 +54,40 @@
         <p>Start at {{currentTime}}</p>
     </div>
     <div id="Area-2">
-        <input id='Input-1' type="text" oninput="query()"></div>
+        <input id='Input-1' type="text" oninput="query()" />
+        <input type='button' value='C' onclick="document.getElementById('Input-1').value=''" />
+        <input type='button' value=',' onclick="inputByClick(',')" />
+        <input type='button' value='.' onclick="inputByClick('.')" />
+        <input type='button' value='B' onclick="inputByClick('B')" />
+        <input type='button' value='K' onclick="inputByClick('K')" />
+        <div>
+            <input id='Input-2' type="text" />
+        </div>
+    </div>
     </div>
     <div id="Area-3">
     </div>
+    <div id="Area-4">
+    </div>
 
     <script type="text/javascript">
+        function inputByClick(c) {
+            if (c == 'K') {
+                document.getElementById('Input-1').value = ''
+                document.getElementById('Input-2').value = ''
+                return 0
+            }
+
+            if (c == 'B') {
+                let value = document.getElementById('Input-2').value
+                let len = value.length
+                document.getElementById('Input-2').value = value.substring(0, len - 1)
+                return 0
+            }
+
+            document.getElementById('Input-2').value += c
+        }
+
         function clear(dom) {
             // Remove all children from the [dom]
             while (dom.childElementCount > 0) {
@@ -57,22 +127,43 @@
 
             clear(document.getElementById("Area-3"));
 
-            // let prompt = document.getElementById("input-prompt");
+            let inp2 = document.getElementById("Input-2");
 
             d3.json("query/" + value).then(function(json) {
                 console.log(json);
                 let lst = json2lst(json);
                 d3.select("#Area-3")
-                    .selectAll("p")
+                    .selectAll("div")
                     .data(lst)
                     .enter()
-                    .append("p")
-                    .html(function(d) {
-                        return d[0];
-                    })
-                    .on("click", function(e, d) {
-                        console.log(d[1]);
-                        // prompt.value = d[1];
+                    .append("div")
+                    .attr('class', 'row-candidates')
+                    .selectAll('p')
+                    .data(d => (d[0]))
+                    .enter()
+                    .append('p')
+                    .attr('class', 'col-candidate')
+                    .html(d => (d))
+                    .on('click', function(e, d) {
+                        inp2.value += d
+                        d3.json('guess/' + d).then(function(json) {
+                            clear(document.getElementById('Area-4'));
+                            let max = 100;
+                            let lst = [];
+                            for (let i in json.sentence) {
+                                lst[lst.length] = json.sentence[i];
+                                if (i > max) {
+                                    break;
+                                }
+                            }
+                            d3.select('#Area-4')
+                                .selectAll('p')
+                                .data(lst)
+                                .enter()
+                                .append('p')
+                                .attr('class', 'row-sentence')
+                                .html(d => (d))
+                        })
                     });
             });
         }

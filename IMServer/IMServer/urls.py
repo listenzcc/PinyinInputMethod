@@ -23,4 +23,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     url(r'^$', views.index),
     url(r'^query/(.{1,20})/$', views.query),
+    url(r'^guess/(.{1,20})/$', views.guess),
 ]
