@@ -4,8 +4,10 @@
         "fenci",
         "fname",
         "idxs",
+        "jieba",
         "pypinyin",
         "scel",
-        "struct"
+        "struct",
+        "tqdm"
     ]
 }

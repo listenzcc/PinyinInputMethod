@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta chars="utf-8" />
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+</head>
+
+<body>
+    <div id="Area-1">
+        <h1>IM website</h1>
+        <p>Start at {{currentTime}}</p>
+    </div>
+    <div id="Area-2">
+        <input id='Input-1' type="text" oninput="query()"></div>
+    </div>
+    <div id="Area-3">
+    </div>
+
+    <script type="text/javascript">
+        function clear(dom) {
+            // Remove all children from the [dom]
+            while (dom.childElementCount > 0) {
+                dom.children[0].remove();
+            }
+        }
+
+        function json2lst(json) {
+            // Convert json into lst
+            let max = 100;
+            let lst = [];
+            for (let i in json.candidates) {
+                lst[lst.length] = [json.candidates[i], json.pinYin[i]];
+                if (i > max) {
+                    break;
+                }
+            }
+            return lst;
+        }
+
+        function query() {
+            let value = document.getElementById("Input-1").value;
+            console.log(value);
+
+            while (value.startsWith(" ")) {
+                value = value.substring(1);
+            }
+
+            while (value.endsWith(" ")) {
+                value = value.substring(0, value.length - 1);
+            }
+
+            if (value.length == 0) {
+                console.log('Empty value received, doing nothing.')
+                return 1;
+            }
+
+            clear(document.getElementById("Area-3"));
+
+            // let prompt = document.getElementById("input-prompt");
+
+            d3.json("query/" + value).then(function(json) {
+                console.log(json);
+                let lst = json2lst(json);
+                d3.select("#Area-3")
+                    .selectAll("p")
+                    .data(lst)
+                    .enter()
+                    .append("p")
+                    .html(function(d) {
+                        return d[0];
+                    })
+                    .on("click", function(e, d) {
+                        console.log(d[1]);
+                        // prompt.value = d[1];
+                    });
+            });
+        }
+    </script>
+</body>
+
+</html>
