@@ -9,16 +9,23 @@ import re
 from tqdm.auto import tqdm
 from pypinyin import pinyin, lazy_pinyin, Style
 
+# Switch if using the latest data
+# Switcher
+new_session = False
+# Setup prefix for data files
+pwd = os.path.dirname(os.path.abspath(__file__))
+data_prefix = os.path.join(pwd, '__data')
+
 # Settings
 # The folder of materials
-folder = os.path.join(os.path.dirname(__file__), '..', '..', 'txt')
+folder_material = os.path.join(os.path.dirname(__file__), '..', '..', 'txt')
 # The segments of sentences
 segments = ['\r', '\n', '。', '；']
 
 # Read contents from .txt file in [folder]
 contents = []
-for fname in os.listdir(folder):
-    contents.append(open(os.path.join(folder, fname),
+for fname in os.listdir(folder_material):
+    contents.append(open(os.path.join(folder_material, fname),
                          'rb').read().decode(errors='ignore'))
 
 contents = '\n'.join(contents)
@@ -144,22 +151,51 @@ class Data(object):
         found['sentence'] = found['sentence'].map(cut)
         return found
 
+    def save_data(self, path_prefix=data_prefix):
+        '''
+        Save [self.df] and [self.cf] as [path_prefix],
+        make sure the DataFrames have been generated in advance,
+        use [self.mk_dataframe] and [self.mk_contentframe] to generate the DataFrames
+        - @path_prefix: The prefix of saved data files, in full path mode
+        '''
+        self.cf.to_json(path_prefix + '-cf.json')
+        self.df.to_json(path_prefix + '-df.json')
+
+    def load_data(self, path_prefix=data_prefix):
+        '''
+        Load [self.df] and [self.cf] as [path_prefix],
+        make sure the files exist in advance,
+        the operation will overwrite the existing DataFrames
+        - @path_prefix: The prefix of saved data files, in full path mode
+        '''
+        self.cf = pd.read_json(path_prefix + '-cf.json')
+        self.df = pd.read_json(path_prefix + '-df.json')
+
 
 # Init data object
 data = Data()
 
-# Feed the data using contents,
-# for each sentence, cut it into ciZus using jieba,
-# and generate the pinYin for each ciZu,
-# update the data using the pinYin and ciZu
-for string in tqdm(contents):
-    ciZu = sorted(set([e.strip() for e in jieba.cut(string, cut_all=True)]))
-    for c in ciZu:
-        pinYin = ''.join(lazy_pinyin(c))
-        data.add(pinYin, c)
+if new_session:
+    # Make up data
+    # Feed the data using contents,
+    # for each sentence, cut it into ciZus using jieba,
+    # and generate the pinYin for each ciZu,
+    # update the data using the pinYin and ciZu
+    for string in tqdm(contents):
+        ciZu = sorted(set([e.strip()
+                           for e in jieba.cut(string, cut_all=True)]))
+        for c in ciZu:
+            pinYin = ''.join(lazy_pinyin(c))
+            data.add(pinYin, c)
 
-# Make up data
-# Make df
-data.mk_dataframe()
-# Make cf
-data.mk_contentframe(contents)
+    # Make df
+    data.mk_dataframe()
+
+    # Make cf
+    data.mk_contentframe(contents)
+
+    # Save latest DataFrames
+    data.save_data()
+
+else:
+    data.load_data()

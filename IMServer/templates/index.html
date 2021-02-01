@@ -7,7 +7,12 @@
     <style type="text/css">
         div {
             margin: 3px;
-            padding: 2px
+            padding: 2px;
+            border: 1px solid forestgreen;
+        }
+        
+        div:hover {
+            border-color: goldenrod;
         }
         
         div#Area-3 {
@@ -28,8 +33,11 @@
             overflow-y: scroll;
         }
         
-        div.row-candidates {
+        div.flex-display {
             display: flex;
+        }
+        
+        div.row-candidates {
             background-color: antiquewhite;
         }
         
@@ -45,47 +53,72 @@
         p.row-sentence:hover {
             background-color: yellow;
         }
+        
+        input {
+            margin-right: 5px;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Slogan -->
     <div id="Area-1">
-        <h1>IM website</h1>
+        <h1>IM System Demo</h1>
         <p>Start at {{currentTime}}</p>
     </div>
+
+    <!-- Input Area -->
     <div id="Area-2">
-        <input id='Input-1' type="text" oninput="query()" />
-        <input type='button' value='C' onclick="document.getElementById('Input-1').value=''" />
-        <input type='button' value=',' onclick="inputByClick(',')" />
-        <input type='button' value='.' onclick="inputByClick('.')" />
-        <input type='button' value='B' onclick="inputByClick('B')" />
-        <input type='button' value='K' onclick="inputByClick('K')" />
+        <h2>Input Area</h2>
+        <div class='flex-display'>
+            <input id='Input-1' type="text" oninput="query()" />
+            <input type='button' value='C' onclick="inputByClick('C')" />
+            <input type='button' value=',' onclick="inputByClick(',')" />
+            <input type='button' value='.' onclick="inputByClick('.')" />
+            <input type='button' value='B' onclick="inputByClick('B')" />
+            <input type='button' value='K' onclick="inputByClick('K')" />
+        </div>
         <div>
             <input id='Input-2' type="text" />
         </div>
     </div>
-    </div>
-    <div id="Area-3">
-    </div>
-    <div id="Area-4">
+
+    <!-- Display Area -->
+    <div class='flex-display'>
+        <div>
+            <h2>Candidates</h2>
+            <div id="Area-3">
+            </div>
+        </div>
+        <div>
+            <h2>Contexts</h2>
+            <div id="Area-4">
+            </div>
+        </div>
     </div>
 
     <script type="text/javascript">
         function inputByClick(c) {
+            if (c == 'C') {
+                document.getElementById('Input-1').value = ''
+            }
             if (c == 'K') {
                 document.getElementById('Input-1').value = ''
                 document.getElementById('Input-2').value = ''
-                return 0
             }
 
             if (c == 'B') {
                 let value = document.getElementById('Input-2').value
                 let len = value.length
                 document.getElementById('Input-2').value = value.substring(0, len - 1)
-                return 0
             }
 
-            document.getElementById('Input-2').value += c
+            if (c == ',' || c == '.') {
+                document.getElementById('Input-2').value += c
+            }
+
+            document.getElementById("Input-1").focus()
+            document.getElementById("Input-1").select()
         }
 
         function clear(dom) {
@@ -137,7 +170,7 @@
                     .data(lst)
                     .enter()
                     .append("div")
-                    .attr('class', 'row-candidates')
+                    .attr('class', 'row-candidates flex-display')
                     .selectAll('p')
                     .data(d => (d[0]))
                     .enter()
@@ -145,7 +178,12 @@
                     .attr('class', 'col-candidate')
                     .html(d => (d))
                     .on('click', function(e, d) {
+                        // Onclick response of candidate ciZu in Chinese
+                        // Record the clicked ciZu into inp2.value
                         inp2.value += d
+                        inputByClick('')
+
+                        // Update the Area-4 for the contents containing the ciZu
                         d3.json('guess/' + d).then(function(json) {
                             clear(document.getElementById('Area-4'));
                             let max = 100;
