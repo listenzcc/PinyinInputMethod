@@ -1,0 +1,77 @@
+div {
+    margin: 3px;
+    padding: 2px;
+    border: 1px solid forestgreen;
+}
+
+div:hover {
+    border-color: goldenrod;
+}
+
+div#Area-3 {
+    width: 6in;
+    height: 4in;
+    overflow-y: scroll;
+}
+
+div#Area-4 {
+    width: 6in;
+    height: 4in;
+    overflow-y: scroll;
+}
+
+div#Area-5 {
+    height: 4in;
+    width: 6in;
+    opacity: 0.9;
+    background-color: cyan;
+    position: absolute;
+    top: 4in;
+    left: 3in;
+    z-index: 1000;
+    display: none;
+}
+
+div#Area-6 {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0.1;
+    background-color: gray;
+    z-index: 999;
+    display: none;
+}
+
+input#Input-2 {
+    width: 6in;
+    height: 1in;
+    overflow-y: scroll;
+}
+
+div.flex-display {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+div.row-candidates {
+    background-color: antiquewhite;
+}
+
+p.col-candidate {
+    margin-left: 10px;
+}
+
+p.col-candidate:hover {
+    background-color: yellow;
+    transform: rotate(7deg) scale(1.2);
+}
+
+p.row-sentence:hover {
+    background-color: yellow;
+}
+
+input {
+    margin-right: 5px;
+}
