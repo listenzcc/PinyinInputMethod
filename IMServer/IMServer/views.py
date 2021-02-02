@@ -5,6 +5,10 @@ from django.shortcuts import render
 from .worker import data
 from .tools import split_words
 
+from WeChatOperator.script import WeChatOperator
+
+wco = WeChatOperator()
+
 
 def index(request):
     print(request)
@@ -32,3 +36,16 @@ def split(request, sentence):
     print(request, sentence)
     split = split_words(sentence)
     return HttpResponse(split.to_json(), content_type='application/json')
+
+
+def sendMessage(request, message):
+    print(request, message)
+    wco.write_message(message)
+    return HttpResponse('{"state": "OK"}', content_type='application/json')
+
+
+def wechat(request, command):
+    print(request, command)
+    if command == 'display':
+        wco.display_wechat()
+    return HttpResponse('{"state": "OK"}', content_type='application/json')

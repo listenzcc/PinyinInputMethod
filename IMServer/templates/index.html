@@ -105,6 +105,8 @@
         </div>
         <div>
             <input id="Input-2" type="text" />
+            <input type="button" value="Send" onclick="sendMessage()" />
+            <input type="button" value="WeChat" onclick="weChat()" />
         </div>
     </div>
 
@@ -130,6 +132,23 @@
     <!-- Scripts in JavaScript -->
     <script type="text/javascript">
         let inp2 = document.getElementById("Input-2");
+
+        function weChat() {
+            // Display weChat app
+            d3.json("weChat/" + "display").then(function(json) {
+                console.log(json);
+            });
+        }
+
+        function sendMessage() {
+            // Send message to weChat
+            // message is read from Input-2
+            let str = document.getElementById("Input-2").value;
+            console.log(str);
+            d3.json("send/" + str).then(function(json) {
+                console.log(json);
+            });
+        }
 
         function onclickArea6() {
             // Hide Area-5 and Area-6

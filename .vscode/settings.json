@@ -1,11 +1,16 @@
 {
     "cSpell.words": [
+        "KEYEVENTF",
+        "KEYUP",
         "cands",
         "fenci",
         "fname",
+        "hwnd",
         "idxs",
         "jieba",
+        "keybd",
         "pypinyin",
+        "pywintypes",
         "scel",
         "struct",
         "tqdm"

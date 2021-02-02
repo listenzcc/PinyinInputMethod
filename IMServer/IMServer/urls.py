@@ -25,4 +25,6 @@ urlpatterns = [
     url(r'^query/(.{1,20})/$', views.query),
     url(r'^guess/(.{1,20})/$', views.guess),
     url(r'^split/(.{1,300})/$', views.split),
+    url(r'^send/(.{1,300})/$', views.sendMessage),
+    url(r'^weChat/(.{1,20})/$', views.wechat),
 ]
