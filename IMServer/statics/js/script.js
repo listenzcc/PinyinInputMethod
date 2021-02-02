@@ -98,7 +98,7 @@ function query() {
         }
         clear(document.getElementById("Area-3"));
 
-        d3.select("#Area-7").selectAll("div").data([0]).exit().remove();
+        d3.select("#Area-7").selectAll("div").data([0, 1]).exit().remove();
         let div7 = d3.select("#Area-7").append("div").attr("class", "flex-display");
 
         d3.select("#Area-3")
@@ -168,6 +168,9 @@ function updateArea4(str) {
             }
         }
 
+        d3.select("#Area-7").selectAll("div").data([0, 1, 2]).exit().remove();
+        let div7 = d3.select("#Area-7").append("div").attr("class", "flex-display");
+
         // Update Area-4
         d3.select("#Area-4")
             .selectAll("p")
@@ -175,16 +178,19 @@ function updateArea4(str) {
             .enter()
             .append("p")
             .attr("class", "row-sentence")
-            .html((d) => d)
+            .html(function(d) {
+                bigBoom(delHtmlTag(d), false, div7);
+                return d;
+            })
             .on("click", function(e, d) {
                 console.log(d);
                 bigBoom(delHtmlTag(d), true);
             });
-        bigBoom(delHtmlTag(lst[0]), false);
+        // bigBoom(delHtmlTag(lst[0]), false);
     });
 }
 
-function bigBoom(str, updateArea5) {
+function bigBoom(str, updateArea5, div7) {
     let inp2 = document.getElementById("Input-2");
     // Perform big boom based on string
     // Area-5 will be updated based on the splitting of the [str]
@@ -205,8 +211,6 @@ function bigBoom(str, updateArea5) {
             }
         }
 
-        d3.select("#Area-7").selectAll("div").data([0, 1]).exit().remove();
-        let div7 = d3.select("#Area-7").append("div").attr("class", "flex-display");
         // Update Area-5
         d3.select("#Area-5")
             .append("div")
@@ -217,7 +221,9 @@ function bigBoom(str, updateArea5) {
             .append("p")
             .attr("class", "col-candidate")
             .html(function(d) {
-                addWordToDiv(d, div7);
+                if (div7 != undefined) {
+                    addWordToDiv(d, div7);
+                }
                 return d;
             })
             .on("click", function(e, d) {

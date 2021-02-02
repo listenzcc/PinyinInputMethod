@@ -15,6 +15,9 @@
         <p>Start at {{currentTime}}</p>
     </div> -->
 
+    <!-- Screen Area -->
+    <div id="Area-7"></div>
+
     <!-- Input Area -->
     <div id="Area-2">
         <h2>Input Area</h2>
@@ -52,19 +55,17 @@
     </div>
     <div id="Area-6" onclick="onclickArea6()"></div>
 
-    <div id="Area-7"></div>
-
     <script type="text/javascript">
         let inp1 = document.getElementById("Input-1");
 
         clear(document.getElementById("Area-7"));
-        let div = d3.select("#Area-7");
+        let area7 = d3.select("#Area-7");
         let lst = [];
         for (let i = 0; i < 26; i++) {
             lst[lst.length] = String.fromCharCode(97 + i);
         }
 
-        div
+        area7
             .append("div")
             .attr("class", "flex-display")
             .selectAll("p")
@@ -76,6 +77,20 @@
             .on("click", function(e, d) {
                 inp1.value += d;
                 query();
+            });
+
+        lst = ["C", "K", "B", "，", "。"];
+        area7
+            .append("div")
+            .attr("class", "flex-display")
+            .selectAll("p")
+            .data(lst)
+            .enter()
+            .append("p")
+            .attr("class", "col-candidate")
+            .html((d) => d)
+            .on("click", function(e, d) {
+                inputByClick(d);
             });
     </script>
 </body>
