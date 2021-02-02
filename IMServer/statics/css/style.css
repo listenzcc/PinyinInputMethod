@@ -44,6 +44,10 @@ div#Area-6 {
     display: none;
 }
 
+div#Area-7 {
+    background-color: gray;
+}
+
 input#Input-2 {
     width: 6in;
     height: 1in;

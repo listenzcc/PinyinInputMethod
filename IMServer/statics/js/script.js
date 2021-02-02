@@ -178,15 +178,17 @@ function updateArea4(str) {
             .html((d) => d)
             .on("click", function(e, d) {
                 console.log(d);
-                bigBoom(delHtmlTag(d));
+                bigBoom(delHtmlTag(d), true);
             });
+        bigBoom(delHtmlTag(lst[0]), false);
     });
 }
 
-function bigBoom(str) {
+function bigBoom(str, updateArea5) {
     let inp2 = document.getElementById("Input-2");
     // Perform big boom based on string
     // Area-5 will be updated based on the splitting of the [str]
+    // only if updateArea5 is true, the Area-5 will be plotted
 
     d3.json("split/" + str).then(function(json) {
         // Clear Area-5
@@ -227,6 +229,8 @@ function bigBoom(str) {
     });
 
     // Display the Area-5 and Area-6
-    document.getElementById("Area-5").style.display = "block";
-    document.getElementById("Area-6").style.display = "block";
+    if (updateArea5) {
+        document.getElementById("Area-5").style.display = "block";
+        document.getElementById("Area-6").style.display = "block";
+    }
 }
