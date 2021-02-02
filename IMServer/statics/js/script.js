@@ -39,10 +39,7 @@ function inputByClick(c) {
     if (c == "B") {
         let value = document.getElementById("Input-2").value;
         let len = value.length;
-        document.getElementById("Input-2").value = value.substring(
-            0,
-            len - 1
-        );
+        document.getElementById("Input-2").value = value.substring(0, len - 1);
     }
 
     // Append symbol to tail
@@ -101,6 +98,9 @@ function query() {
         }
         clear(document.getElementById("Area-3"));
 
+        d3.select("#Area-7").selectAll("div").data([0]).exit().remove();
+        let div7 = d3.select("#Area-7").append("div").attr("class", "flex-display");
+
         d3.select("#Area-3")
             .selectAll("div")
             .data(lst)
@@ -112,7 +112,10 @@ function query() {
             .enter()
             .append("p")
             .attr("class", "col-candidate")
-            .html((d) => d)
+            .html(function(d) {
+                addWordToDiv(d, div7);
+                return d;
+            })
             .on("click", function(e, d) {
                 // Onclick response of candidate ciZu in Chinese
                 // Record the clicked ciZu into inp2.value
@@ -123,6 +126,23 @@ function query() {
                 updateArea4(d);
             });
     });
+}
+
+function addWordToDiv(word, div) {
+    let inp2 = document.getElementById("Input-2");
+    let max = 50;
+    if (div._groups[0][0].childElementCount > max) {
+        return 1;
+    }
+    div
+        .append("p")
+        .attr("class", "col-candidate")
+        .html(word)
+        .on("click", function(e, d) {
+            inp2.value += word;
+            inputByClick("");
+            updateArea4(word);
+        });
 }
 
 function delHtmlTag(str) {
@@ -183,6 +203,8 @@ function bigBoom(str) {
             }
         }
 
+        d3.select("#Area-7").selectAll("div").data([0, 1]).exit().remove();
+        let div7 = d3.select("#Area-7").append("div").attr("class", "flex-display");
         // Update Area-5
         d3.select("#Area-5")
             .append("div")
@@ -192,7 +214,10 @@ function bigBoom(str) {
             .enter()
             .append("p")
             .attr("class", "col-candidate")
-            .html((d) => d)
+            .html(function(d) {
+                addWordToDiv(d, div7);
+                return d;
+            })
             .on("click", function(e, d) {
                 // Onclick response of candidate ciZu in Chinese
                 // Record the clicked ciZu into inp2.value
