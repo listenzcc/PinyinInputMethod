@@ -14,5 +14,8 @@
         "scel",
         "struct",
         "tqdm"
+    ],
+    "python.analysis.extraPaths": [
+        "IMServer"
     ]
 }
