@@ -1,117 +1,55 @@
 # Backend worker
 
+# ! This one is ready to be replaced by a simpler worker,
+# ! in which, it has only the query method,
+# ! since the data has been made by in another dataset.
+
 # Imports
 import os
+import json
 import pandas as pd
-import jieba
-import re
-
-from tqdm.auto import tqdm
-from pypinyin import pinyin, lazy_pinyin, Style
-
-# Switch if using the latest data
-# Switcher
-new_session = False
-# Setup prefix for data files
-pwd = os.path.dirname(os.path.abspath(__file__))
-data_prefix = os.path.join(pwd, '__data')
-
-# Settings
-# The folder of materials
-folder_material = os.path.join(os.path.dirname(__file__), '..', '..', 'txt')
-# The segments of sentences
-segments = ['\r', '\n', '。', '；']
-
-# Read contents from .txt file in [folder]
-contents = []
-for fname in os.listdir(folder_material):
-    contents.append(open(os.path.join(folder_material, fname),
-                         'rb').read().decode(errors='ignore'))
-
-contents = '\n'.join(contents)
-for s in segments:
-    contents = contents.replace(s, '\n')
-
-contents = [e.strip() for e in contents.split('\n') if e.strip()]
-contents = sorted(set(contents))
-contents
 
 
-# Local functions
-def match(pattern, string):
-    '''
-    Whether the [string] matches with [pattern]
-
-    Args:
-    - @pattern: The pattern of re
-    - @string: The string to be tested
-
-    Out:
-    - Boolean variable of the matching
-    '''
-    return re.match(pattern, string) is not None
-
-
-class Data(object):
-    '''
-    Data object of pinYin input method.
+class Worker(object):
+    '''The backend worker of the input method.
     '''
 
-    def __init__(self):
-        '''
-        Build empty dataset
-        The empty [self.data] as the type of dict will be generated.
-        '''
-        self.data = dict()
+    def __init__(self, path1, path2, path3):
+        '''The initialization of the worker,
+        the path of necessary files is reqired.
 
-    def add(self, pinYin, ciZu):
+        Args:
+        - @xxx
         '''
-        Add [pinYin] and [ciZu] into the dataset
-        - @pinYin: The pinYin string, in characters
-        - @ciZu: The ciZu string, in chinese-words
+        return
 
-        The [self.data] will be updated,
-        - key: The pinYin string
-        - value: [{ciZu}, freq]
-        - {ciZu}: The set of several ciZu to the key 
-        - freq: The frequency of occuring of the pinYin
-        '''
-        if pinYin not in self.data:
-            self.data[pinYin] = [{ciZu}, 1]
-        else:
-            self.data[pinYin][0].add(ciZu)
-            self.data[pinYin][1] += 1
+    def query(self, pinYin):
+        '''Query the ciZu of the [pinYin].
 
-    def mk_dataframe(self):
-        '''
-        Make DataFrame of pinYins and their candidates ciZus,
-        based on the [self.data].
-        It should be operated, **AFTER** users have finished adding the pinYin and ciZu pairs.
+        Args:
+        - @pinYin: The pinYin string to be queried.
 
-        The [self.df] will be generated,
-        the columns are ['pinYin', 'candidates', 'freq'],
-        where 'candidates' refers all the ciZu
+        Outs:
+        - @ciZu_json: The json object of ciZu.
         '''
-        df = pd.DataFrame()
-        df['tmp'] = self.data.values()
-        df['candidates'] = df['tmp'].map(lambda e: e[0])
-        df['freq'] = df['tmp'].map(lambda e: e[1])
-        df['pinYin'] = self.data.keys()
-        df = df[['pinYin', 'candidates', 'freq']]
-        self.df = df.sort_values('freq', ascending=False)
+        return
 
-    def mk_contentframe(self, contents):
-        '''
-        Make DataFrame of contents,
-        it contains all the sentences in the txt materials,
-        it is designed for checkout ciZu from the sentences.
+    def suggest(self, ciZu):
+        '''Check out some suggestion of the [ciZu] input.
 
-        The [self.cf] will be generated,
-        the column is 'sentence'.
+        Args:
+        - @ciZu: The ciZu of being checked.
+
+        Outs:
+        - @suggest_json: The json object of suggestions.
         '''
-        cf = pd.DataFrame(contents)
-        cf.columns = ['sentence']
-        self.cf = cf
+        return
+
+
+class OldWorker(object):
+    '''
+    ! To be deleted
+    '''
 
     def query(self, pinYin):
         '''
