@@ -1,5 +1,5 @@
 import os
-from EasySetting import Config
+from EasySetting.config import Config
 
 cfg = Config(cfg_path=os.path.join(
     os.path.dirname(__file__),

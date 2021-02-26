@@ -2,7 +2,7 @@ import time
 from django.http import HttpResponse
 from django.shortcuts import render
 
-from .worker import data
+from .worker import worker
 from .tools import split_words
 
 from WeChatOperator.script import WeChatOperator
@@ -15,18 +15,18 @@ def index(request):
     contents = dict(
         currentTime=time.ctime()
     )
-    return render(request, 'index.html', contents)
+    return render(request, 'BCIScreen.html', contents)
 
 
 def query(request, pinYin):
     print(request, pinYin)
-    found = data.query(pinYin)
+    found = worker.query(pinYin)
     return HttpResponse(found.to_json(), content_type='application/json')
 
 
 def guess(request, zi):
     print(request, zi)
-    found = data.suggest(zi)
+    found = worker.suggest(zi)
     return HttpResponse(found.to_json(), content_type='application/json')
 
 
