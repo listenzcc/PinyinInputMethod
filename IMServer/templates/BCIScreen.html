@@ -3,10 +3,97 @@
 <meta charset="utf-8" />
 
 <head>
+    <title>BCI Screen Simulator</title>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="/static/js/BCIScript.js"></script>
+    <style type="text/css">
+        div#screen-simulator {
+            position: relative;
+            width: 8in;
+            height: 6in;
+            background-color: darkslategray;
+        }
+        
+        div.panel {
+            padding: 0;
+            margin: 0;
+            position: absolute;
+            background-color: grey;
+        }
+        
+        div.flex {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        
+        p.clickable {
+            padding: 3px;
+        }
+        
+        p.clickable:hover {
+            background-color: darkgoldenrod;
+            transform: rotate(7deg) scale(1.2);
+            cursor: none !important;
+        }
+        
+        div#control-panel {
+            left: 5%;
+            top: 55%;
+            width: 15%;
+            height: 40%;
+        }
+        
+        div#char-panel {
+            left: 5%;
+            top: 5%;
+            width: 15%;
+            height: 45%;
+        }
+        
+        div#dynamic-1-panel {
+            left: 25%;
+            top: 5%;
+            width: 30%;
+            height: 90%;
+        }
+        
+        div#dynamic-2-panel {
+            left: 60%;
+            top: 5%;
+            width: 35%;
+            height: 90%;
+        }
+        
+        textarea#main-output {
+            height: 1in;
+            width: 8in;
+        }
+    </style>
 </head>
 
-<body></body>
+<body>
+    <div>
+        <h1>BCI Screen Simulator</h1>
+    </div>
+    <div>
+        <h2>Screen Simulator</h2>
+        <div>
+            <textarea id="main-output"></textarea>
+        </div>
+        <div>
+            <input id="main-input" type="text" oninput="newInput()" />
+        </div>
+        <div id="screen-simulator">
+            <div class="panel" id="control-panel"></div>
+            <div class="panel" id="char-panel"></div>
+            <div class="panel" id="dynamic-1-panel"></div>
+            <div class="panel" id="dynamic-2-panel"></div>
+        </div>
+        <script type="text/javascript">
+            onstartScript();
+        </script>
+    </div>
+</body>
 
 </html>

@@ -17,6 +17,5 @@
     ],
     "python.analysis.extraPaths": [
         "IMServer",
-        "~\\OneDrive\\Scripts\\Python",
     ],
 }
