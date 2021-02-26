@@ -6,44 +6,95 @@
 
 # Imports
 import os
+import re
 import json
 import pandas as pd
+
+from . import cfg
+
+
+def match(pattern, string):
+    '''
+    Whether the [string] matches with [pattern]
+
+    Args:
+    - @pattern: The pattern of re
+    - @string: The string to be tested
+
+    Out:
+    - True if match, False if not
+    '''
+    return re.match(pattern, string) is not None
+
+
+def regular(df, columns):
+    '''Regular the [df],
+    the [columns] will be selected,
+    the index will be restored as 1, 2, ...
+
+    Args:
+    - @df: The DataFrame to be regularized;
+    - @columns: The columns to be filtered.
+
+    Outs:
+    - The regularized DataFrame.
+    '''
+    df.index = range(len(df))
+    return df[columns]
 
 
 class Worker(object):
     '''The backend worker of the input method.
     '''
 
-    def __init__(self, path1, path2, path3):
-        '''The initialization of the worker,
-        the path of necessary files is reqired.
+    def __init__(self, cfg=cfg):
+        '''The initialization of the worker.
+
+        The pinYin_table and ciZu_table will be loaded.
+        The path of them are provided in prior.
 
         Args:
-        - @xxx
+        - @ cfg: The config object, default value is cfg in prior.
         '''
+        self.pinYin_table = pd.read_json(cfg.get('pinYinTable', 'Path'))
+        self.ciZu_table = pd.read_json(cfg.get('ciZuTable', 'Path'))
         return
 
     def query(self, pinYin):
-        '''Query the ciZu of the [pinYin].
+        '''Query the ciZu of the[pinYin],
+        the vague matching method is used,
+        for example, "abc" matches with the patterns like "axxbyczz".
 
         Args:
         - @pinYin: The pinYin string to be queried.
 
         Outs:
-        - @ciZu_json: The json object of ciZu.
+        - @ciZu_json: The found slices.
         '''
-        return
+
+        columns = ['pinYin', 'ciZus', 'count']
+
+        p = '.*'.join(pinYin)
+        p = p + '.*'
+        found = self.pinYin_table[self.pinYin_table['pinYin'].map(
+            lambda e: match(p, e))]
+
+        return regular(found, columns)
 
     def suggest(self, ciZu):
-        '''Check out some suggestion of the [ciZu] input.
+        '''Check out some suggestion of the[ciZu] input.
 
         Args:
         - @ciZu: The ciZu of being checked.
 
         Outs:
-        - @suggest_json: The json object of suggestions.
+        - @suggest_json: The slices of suggestions.
         '''
-        return
+        columns = ['ciZu', 'pinYin', 'suggests']
+
+        found = self.ciZu_table.query(f'ciZu == "{ciZu}"')
+
+        return regular(found, columns)
 
 
 class OldWorker(object):
@@ -53,15 +104,15 @@ class OldWorker(object):
 
     def query(self, pinYin):
         '''
-        Checkout [pinYin] for the ciZu candidates,
-        the [self.df] DataFrame is used to be checked,
+        Checkout[pinYin] for the ciZu candidates,
+        the[self.df] DataFrame is used to be checked,
         the regular express is used to use the vague matching.
 
         Args:
-        - @pinYin: The pinYin string to be matched
+        - @ pinYin: The pinYin string to be matched
 
         Outs:
-        - @found: The found rows of the [self.df]
+        - @ found: The found rows of the[self.df]
         '''
         p = '.*'.join(pinYin)
         p = p + '.*'
@@ -70,15 +121,15 @@ class OldWorker(object):
 
     def guess(self, zi):
         '''
-        Checkout [zi] out of the [self.cf],
+        Checkout[zi] out of the[self.cf],
         it finds sentence with [zi] inside them,
-        the output is the series of the slices of the finds with the [zi] at **head but not the first** of it.
+        the output is the series of the slices of the finds with the[zi] at ** head but not the first ** of it.
 
         Args:
-        - @zi: The zi to be found 
+        - @ zi: The zi to be found
 
         Outs:
-        - @found: The found sentence slices
+        - @ found: The found sentence slices
         '''
         def cut(s, zi=zi):
             j = max(s.find(zi)-4, 0)
@@ -91,20 +142,20 @@ class OldWorker(object):
 
     def save_data(self, path_prefix=data_prefix):
         '''
-        Save [self.df] and [self.cf] as [path_prefix],
+        Save[self.df] and [self.cf] as [path_prefix],
         make sure the DataFrames have been generated in advance,
-        use [self.mk_dataframe] and [self.mk_contentframe] to generate the DataFrames
-        - @path_prefix: The prefix of saved data files, in full path mode
+        use[self.mk_dataframe] and [self.mk_contentframe] to generate the DataFrames
+        - @ path_prefix: The prefix of saved data files, in full path mode
         '''
         self.cf.to_json(path_prefix + '-cf.json')
         self.df.to_json(path_prefix + '-df.json')
 
     def load_data(self, path_prefix=data_prefix):
         '''
-        Load [self.df] and [self.cf] as [path_prefix],
+        Load[self.df] and [self.cf] as [path_prefix],
         make sure the files exist in advance,
         the operation will overwrite the existing DataFrames
-        - @path_prefix: The prefix of saved data files, in full path mode
+        - @ path_prefix: The prefix of saved data files, in full path mode
         '''
         self.cf = pd.read_json(path_prefix + '-cf.json')
         self.df = pd.read_json(path_prefix + '-df.json')

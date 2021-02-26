@@ -21,14 +21,12 @@ def index(request):
 def query(request, pinYin):
     print(request, pinYin)
     found = data.query(pinYin)
-    found.index = range(len(found))
     return HttpResponse(found.to_json(), content_type='application/json')
 
 
 def guess(request, zi):
     print(request, zi)
-    found = data.guess(zi)
-    found.index = range(len(found))
+    found = data.suggest(zi)
     return HttpResponse(found.to_json(), content_type='application/json')
 
 

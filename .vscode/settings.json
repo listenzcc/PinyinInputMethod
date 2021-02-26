@@ -16,6 +16,7 @@
         "tqdm"
     ],
     "python.analysis.extraPaths": [
-        "IMServer"
-    ]
+        "IMServer",
+        "~\\OneDrive\\Scripts\\Python",
+    ],
 }

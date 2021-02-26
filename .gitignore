@@ -1,4 +1,5 @@
 # Customed
+.vscode
 *.scel
 _*.json
 cellDicts/merged.json
