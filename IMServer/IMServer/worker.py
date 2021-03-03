@@ -13,18 +13,18 @@ import pandas as pd
 from . import cfg
 
 
-def match(pattern, string):
+def match(r, string):
     '''
-    Whether the [string] matches with [pattern]
+    Whether the [string] matches with [r]
 
     Args:
-    - @pattern: The pattern of re
+    - @r: The pre compiled regular expression
     - @string: The string to be tested
 
     Out:
     - True if match, False if not
     '''
-    return re.match(pattern, string) is not None
+    return r.match(string) is not None
 
 
 def regular(df, columns):
@@ -76,8 +76,9 @@ class Worker(object):
 
         p = '.*'.join(pinYin)
         p = p + '.*'
+        r = re.compile(p)
         found = self.pinYin_table[self.pinYin_table['pinYin'].map(
-            lambda e: match(p, e))]
+            lambda e: match(r, e))]
 
         return regular(found, columns)
 
