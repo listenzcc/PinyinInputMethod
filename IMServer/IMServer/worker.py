@@ -77,8 +77,14 @@ class Worker(object):
         p = '.*'.join(pinYin)
         p = p + '.*'
         r = re.compile(p)
+
+        # found = self.pinYin_table[self.pinYin_table['pinYin'].map(
+        #     lambda e: match(r, e))]
+
         found = self.pinYin_table[self.pinYin_table['pinYin'].map(
-            lambda e: match(r, e))]
+            lambda e: e.startswith(p[0]))]
+        if len(found) > 0:
+            found = found[found['pinYin'].map(lambda e: match(r, e))]
 
         return regular(found, columns)
 

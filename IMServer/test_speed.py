@@ -67,7 +67,11 @@ report = report.append({
 report['It/s'] = report['Num'] / report['Cost']
 for c in ['Start', 'Stop']:
     report[c] = report[c].map(time.ctime)
-report.to_html('speed_report.html')
+
+filename = 'speed_report.html'
+with open(filename, 'a') as f:
+    f.write('<h2>{}</h2>'.format(time.ctime()))
+    f.write(report.to_html())
 
 # %%
 print('All Done.')
