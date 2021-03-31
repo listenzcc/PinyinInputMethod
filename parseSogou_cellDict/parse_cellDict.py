@@ -2,6 +2,7 @@
 # Aim: Parse cell dict.
 
 # %%
+import json
 import os
 import pandas as pd
 import struct
@@ -192,7 +193,7 @@ class SCEL_cellDict(object):
 
 # %%
 # File settings
-if False:
+if True:
     folder = os.path.join(os.path.dirname(__file__), '..', 'cellDicts')
 
     for name in os.listdir(folder):

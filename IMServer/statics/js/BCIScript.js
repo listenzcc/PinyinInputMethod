@@ -16,6 +16,14 @@ function clearAll(obj, name) {
     obj.selectAll(name).data([]).exit().remove();
 }
 
+function clearScreen() {
+    console.log("Clear Screen");
+    clearAll(d3.select("#dynamic-1-panel"), "div");
+    clearAll(d3.select("#dynamic-2-panel"), "div");
+    document.getElementById("main-output").value += "\n>> ";
+    document.getElementById("main-input").value = "";
+}
+
 function onstartScript() {
     // Operations on startup
     console.log("Operating Onstart Script...");
@@ -41,6 +49,7 @@ function onstartScript() {
         .append("p")
         .text((d) => d)
         .attr("class", "clickable")
+        .attr("style", "font-family: monospace, bold; font-size:20")
         .on("click", function(e, d) {
             console.log(d);
             inp.value += d;
@@ -91,6 +100,7 @@ function newInput() {
             .on("click", function(e, d) {
                 console.log(d);
                 out.value += d;
+                inp.value = "";
                 newSuggest(d);
             });
     });
@@ -99,6 +109,7 @@ function newInput() {
 function newSuggest(ciZu) {
     // Fetch suggestions based on ciZu
     let out = get("main-output");
+    let inp = get("main-input");
     let panel = d3.select("#dynamic-2-panel");
 
     d3.json("guess/" + ciZu).then(function(json) {
@@ -118,6 +129,8 @@ function newSuggest(ciZu) {
             .on("click", function(e, d) {
                 console.log(d);
                 out.value += d;
+                inp.value = "";
+                newSuggest(d);
             });
     });
 }
